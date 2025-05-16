@@ -10,7 +10,27 @@
 <body>
   <h1>Sparringo</h1>
 
+<!-- === Раздел создания категорий === -->
+  <section id="category-form">
+    <h2>Добавить категорию</h2>
+    <input type="text" id="cat-name" placeholder="Название категории" />
+    <input type="number" id="cat-min-age" placeholder="Мин. возраст" />
+    <input type="number" id="cat-max-age" placeholder="Макс. возраст" />
+    <input type="number" id="cat-min-weight" placeholder="Мин. вес" />
+    <input type="number" id="cat-max-weight" placeholder="Макс. вес" />
+    <button onclick="addCategory()">Добавить категорию</button>
+  </section>
+
+  <section>
+    <h2>Категории</h2>
+    <ul id="category-list"></ul>
+  </section>
+
+  <hr/>
+
+  <!-- === Раздел участников === -->
   <section id="form">
+    <h2>Добавить участника</h2>
     <input type="text" id="name" placeholder="Имя участника" />
     <input type="number" id="age" placeholder="Возраст" />
     <input type="number" id="weight" placeholder="Вес (кг)" />
@@ -22,10 +42,13 @@
     <ul id="participant-list"></ul>
   </section>
 
+  <hr/>
+
+  <!-- === Генерация пар === -->
   <section>
-    <button onclick="generatePairs()">Сгенерировать пары</button>
-    <h2>Пары</h2>
-    <ul id="pairs-list"></ul>
+    <button onclick="generatePairs()">Сгенерировать пары по категориям</button>
+    <h2>Результат</h2>
+    <div id="pairs-container"></div>
   </section>
 
   <script src="app.js"></script>
