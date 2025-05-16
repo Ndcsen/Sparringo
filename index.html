@@ -20,10 +20,13 @@
 
 </head>
 <body>
-  <h1>Sparringo</h1>
+  <!-- Ambient background -->
+  <div id="ambient-bg"></div>
 
-  <!-- Печать -->
-  <button id="print-btn" onclick="window.print()">🖨 Печать</button>
+  <header>
+    <h1>Sparringo</h1>
+    <button id="theme-toggle" aria-label="Переключить тему">🌓</button>
+  </header>
 
 <!-- === Раздел создания категорий === -->
   <section id="category-form">
@@ -66,13 +69,30 @@
     <div id="pairs-container"></div>
   </section>
 
+  <section id="category-form">…</section>
+  <section id="form">…</section>
+  <section id="pairs-container">…</section>
+
+  <button id="print-btn" onclick="window.print()">🖨 Печать</button>
+
   <script src="app.js"></script>
-  <script>
-    // Регистрируем service worker для PWA
+    <script>
+    // Theme toggle
+    const toggle = document.getElementById('theme-toggle');
+    toggle.addEventListener('click', () => {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('sparringo_theme', next);
+    });
+    // Load saved theme
+    const saved = localStorage.getItem('sparringo_theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+
+    // Register SW
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-        .then(() => console.log('Service Worker зарегистрирован'))
-        .catch(err => console.error('SW registration failed:', err));
+      navigator.serviceWorker.register('service-worker.js');
     }
   </script>
 </body>
