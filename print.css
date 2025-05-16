@@ -1,0 +1,25 @@
+/* print.css — стили только при печати */
+
+@page {
+  margin: 1cm;
+}
+
+body * {
+  visibility: hidden;
+}
+
+#print-btn {
+  display: none;
+}
+
+/* Показываем только контейнер с результатами */
+#pairs-container,
+#pairs-container * {
+  visibility: visible;
+}
+
+/* Подгоняем типографику */
+#pairs-container {
+  font-size: 12pt;
+  line-height: 1.4;
+}
