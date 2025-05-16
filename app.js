@@ -1,14 +1,4 @@
-// ==== Данные и LocalStorage ====
-const categories = [];
-const participants = [];
-
-let editingCategoryIndex = null;
-let editingParticipantIndex = null;
-
-let tournamentRounds = [];
-let currentRound = 0;
-
-// Сохранение и загрузка данных
+// ==== LocalStorage ====
 function saveData() {
   localStorage.setItem('sparringo_categories', JSON.stringify(categories));
   localStorage.setItem('sparringo_participants', JSON.stringify(participants));
@@ -21,7 +11,24 @@ function loadData() {
   if (parts) participants.splice(0, participants.length, ...JSON.parse(parts));
 }
 
+// Массивы для хранения данных
+const categories = [];
+const participants = [];
+
+// Турнирные данные для выбранной категории
+let tournamentRounds = [];
+let currentRound = 0;
+let selectedTournamentCategory = null;
+
+// Загрузка при старте
+loadData();
+renderCategories();
+renderParticipants();
+populateCategorySelect();
+
 // === Категории ===
+let editingCategoryIndex = null;
+
 function addCategory() {
   const name = document.getElementById('cat-name').value.trim();
   const minAge = parseInt(document.getElementById('cat-min-age').value, 10);
@@ -44,12 +51,13 @@ function addCategory() {
   } else {
     categories[editingCategoryIndex] = newCat;
     editingCategoryIndex = null;
-    document.querySelector('#category-form-btn').textContent = 'Добавить категорию';
+    document.querySelector('#category-form button').textContent = 'Добавить категорию';
   }
 
   clearCategoryForm();
   saveData();
   renderCategories();
+  populateCategorySelect();
 }
 
 function renderCategories() {
@@ -70,6 +78,7 @@ function renderCategories() {
       categories.splice(i, 1);
       saveData();
       renderCategories();
+      populateCategorySelect();
     };
     li.appendChild(delBtn);
 
@@ -85,7 +94,7 @@ function startEditCategory(index) {
   document.getElementById('cat-max-age').value = c.maxAge;
   document.getElementById('cat-min-weight').value = c.minWeight;
   document.getElementById('cat-max-weight').value = c.maxWeight;
-  document.querySelector('#category-form-btn').textContent = 'Сохранить изменения';
+  document.querySelector('#category-form button').textContent = 'Сохранить изменения';
 }
 
 function clearCategoryForm() {
@@ -93,7 +102,22 @@ function clearCategoryForm() {
     .forEach(id => document.getElementById(id).value = '');
 }
 
+// Заполняет селект выбора категории турнира
+function populateCategorySelect() {
+  const select = document.getElementById('tournament-category-select');
+  if (!select) return;
+  select.innerHTML = '<option value="">Выберите категорию</option>';
+  categories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.name;
+    opt.textContent = c.name;
+    select.appendChild(opt);
+  });
+}
+
 // === Участники ===
+let editingParticipantIndex = null;
+
 function addParticipant() {
   const name = document.getElementById('name').value.trim();
   const age = parseInt(document.getElementById('age').value, 10);
@@ -104,31 +128,35 @@ function addParticipant() {
     return;
   }
 
-  // Поиск категории с ближайшим весом, если точной нет
+  // Ищем точную категорию
   let category = categories.find(c =>
     age >= c.minAge && age <= c.maxAge &&
     weight >= c.minWeight && weight <= c.maxWeight
   );
 
+  // Если не нашли, ищем ближайшую по весу среди подходящих по возрасту
   if (!category) {
-    // Попытка найти категорию по возрасту с минимальной разницей веса
-    const ageCats = categories.filter(c => age >= c.minAge && age <= c.maxAge);
-    if (ageCats.length === 0) {
-      alert('Нет подходящей категории по возрасту.');
-      return;
+    const ageFit = categories.filter(c => age >= c.minAge && age <= c.maxAge);
+    if (ageFit.length) {
+      let minDiff = Infinity;
+      ageFit.forEach(c => {
+        const diff = weight < c.minWeight
+          ? c.minWeight - weight
+          : weight > c.maxWeight
+            ? weight - c.maxWeight
+            : 0;
+        if (diff < minDiff) {
+          minDiff = diff;
+          category = c;
+        }
+      });
+      alert(`Участник автоматически отнесён к категории "${category.name}"`);
     }
-    category = ageCats.reduce((prev, curr) => {
-      const prevDiff = Math.min(
-        Math.abs(weight - prev.minWeight),
-        Math.abs(weight - prev.maxWeight)
-      );
-      const currDiff = Math.min(
-        Math.abs(weight - curr.minWeight),
-        Math.abs(weight - curr.maxWeight)
-      );
-      return currDiff < prevDiff ? curr : prev;
-    });
-    alert(`Участник не подходит точно по весу, назначена ближайшая категория: ${category.name}`);
+  }
+
+  if (!category) {
+    alert('Нет подходящей категории по возрасту. Добавьте категорию или исправьте данные.');
+    return;
   }
 
   const newP = { name, age, weight, category: category.name };
@@ -137,7 +165,7 @@ function addParticipant() {
   } else {
     participants[editingParticipantIndex] = newP;
     editingParticipantIndex = null;
-    document.querySelector('#participant-form-btn').textContent = 'Добавить участника';
+    document.querySelector('#form button').textContent = 'Добавить участника';
   }
 
   clearParticipantForm();
@@ -176,14 +204,14 @@ function startEditParticipant(index) {
   document.getElementById('name').value = p.name;
   document.getElementById('age').value = p.age;
   document.getElementById('weight').value = p.weight;
-  document.querySelector('#participant-form-btn').textContent = 'Сохранить участника';
+  document.querySelector('#form button').textContent = 'Сохранить участника';
 }
 
 function clearParticipantForm() {
   ['name','age','weight'].forEach(id => document.getElementById(id).value = '');
 }
 
-// === Генерация пар ===
+// === Генерация пар по категориям ===
 function generatePairs() {
   const container = document.getElementById('pairs-container');
   container.innerHTML = '';
@@ -223,30 +251,74 @@ function generatePairs() {
   });
 }
 
-// === Турнир ===
-function startTournament() {
-  // Подготовка раундов: для каждой категории генерируем пары из участников
-  tournamentRounds = [];
-
-  categories.forEach(c => {
-    const participantsInCat = participants.filter(p => p.category === c.name);
-    if (participantsInCat.length < 2) return; // мало участников
-
-    const shuffled = [...participantsInCat].sort(() => Math.random() - 0.5);
-    let pairs = [];
-    for (let i = 0; i < shuffled.length - 1; i += 2) {
-      pairs.push({ p1: shuffled[i], p2: shuffled[i + 1], winner: null });
-    }
-    if (shuffled.length % 2) {
-      pairs.push({ p1: shuffled[shuffled.length - 1], p2: null, winner: shuffled[shuffled.length - 1] });
-    }
-    tournamentRounds.push({ category: c.name, pairs });
-  });
-
-  currentRound = 0;
-  renderTournamentRound();
-  document.getElementById('start-tournament-btn').style.display = 'none';
-  document.getElementById('next-round-btn').style.display = 'inline-block';
+// === Турнир: создание и управление раундами для выбранной категории ===
+function createRound(list) {
+  const shuffled = [...list].sort(() => Math.random() - 0.5);
+  const pairs = [];
+  for (let i = 0; i < shuffled.length - 1; i += 2) {
+    pairs.push({ a: shuffled[i], b: shuffled[i+1], winner: null });
+  }
+  if (shuffled.length % 2 === 1) {
+    pairs.push({ a: shuffled[shuffled.length-1], b: null, winner: shuffled[shuffled.length-1] });
+  }
+  return pairs;
 }
 
-function renderTournamentRound()
+function renderRound() {
+  const container = document.getElementById('round-container');
+  container.innerHTML = `<h2>Турнир: ${selectedTournamentCategory} (Этап ${currentRound + 1})</h2>`;
+  const list = participants.filter(p => p.category === selectedTournamentCategory);
+  const round = tournamentRounds[currentRound];
+  round.forEach((pair, i) => {
+    const div = document.createElement('div');
+    div.className = 'tournament-pair';
+    if (pair.b) {
+      div.innerHTML = `
+        <span>${pair.a.name}</span>
+        <button data-index="${i}" data-choice="a">✔</button>
+        <button data-index="${i}" data-choice="b">✔</button>
+        <span>${pair.b.name}</span>
+      `;
+    } else {
+      div.innerHTML = `<span>${pair.a.name} (бай) — проходит автоматически</span>`;
+      pair.winner = pair.a;
+    }
+    container.appendChild(div);
+  });
+
+  container.querySelectorAll('button').forEach(btn => {
+    btn.onclick = e => {
+      const idx = +e.target.dataset.index;
+      const choice = e.target.dataset.choice;
+      tournamentRounds[currentRound][idx].winner = choice === 'a' ? tournamentRounds[currentRound][idx].a : tournamentRounds[currentRound][idx].b;
+      renderRound();
+    };
+  });
+
+  const allChosen = tournamentRounds[currentRound].every(p => p.winner);
+  document.getElementById('next-round-btn').style.display = allChosen ? 'block' : 'none';
+}
+
+// Обработчики турнира
+document.getElementById('start-tournament-btn').onclick = () => {
+  const select = document.getElementById('tournament-category-select');
+  const cat = select.value;
+  if (!cat) { alert('Выберите категорию турнира'); return; }
+  selectedTournamentCategory = cat;
+  const list = participants.filter(p => p.category === cat);
+  if (list.length < 2) { alert('Недостаточно участников в этой категории'); return; }
+  tournamentRounds = [createRound(list)];
+  currentRound = 0;
+  renderRound();
+};
+
+document.getElementById('next-round-btn').onclick = () => {
+  const winners = tournamentRounds[currentRound].map(p => p.winner);
+  if (winners.length === 1) {
+    alert(`Победитель турнира в категории ${selectedTournamentCategory} — ${winners[0].name}!`);
+    return;
+  }
+  tournamentRounds.push(createRound(winners));
+  currentRound++;
+  renderRound();
+};
