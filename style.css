@@ -116,3 +116,19 @@ li {
   align-items: center;
   justify-content: center;
 }
+
+.tournament-pair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 0.5rem 0;
+}
+.tournament-pair button {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+#round-container h2 {
+  margin-bottom: 0.5rem;
+}
+
