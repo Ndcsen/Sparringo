@@ -20,6 +20,9 @@ let tournamentRounds = [];
 let currentRound = 0;
 let selectedTournamentCategory = null;
 
+// Общие результаты по категориям
+const tournamentResults = {};
+
 // Загрузка при старте
 loadData();
 renderCategories();
@@ -267,7 +270,6 @@ function createRound(list) {
 function renderRound() {
   const container = document.getElementById('round-container');
   container.innerHTML = `<h2>Турнир: ${selectedTournamentCategory} (Этап ${currentRound + 1})</h2>`;
-  const list = participants.filter(p => p.category === selectedTournamentCategory);
   const round = tournamentRounds[currentRound];
   round.forEach((pair, i) => {
     const div = document.createElement('div');
@@ -290,7 +292,9 @@ function renderRound() {
     btn.onclick = e => {
       const idx = +e.target.dataset.index;
       const choice = e.target.dataset.choice;
-      tournamentRounds[currentRound][idx].winner = choice === 'a' ? tournamentRounds[currentRound][idx].a : tournamentRounds[currentRound][idx].b;
+      tournamentRounds[currentRound][idx].winner = choice === 'a'
+        ? tournamentRounds[currentRound][idx].a
+        : tournamentRounds[currentRound][idx].b;
       renderRound();
     };
   });
@@ -299,7 +303,6 @@ function renderRound() {
   document.getElementById('next-round-btn').style.display = allChosen ? 'block' : 'none';
 }
 
-// Обработчики турнира
 document.getElementById('start-tournament-btn').onclick = () => {
   const select = document.getElementById('tournament-category-select');
   const cat = select.value;
@@ -310,6 +313,36 @@ document.getElementById('start-tournament-btn').onclick = () => {
   tournamentRounds = [createRound(list)];
   currentRound = 0;
   renderRound();
+};
+
+document.getElementById('next-round-btn').onclick = () => {
+  const round = tournamentRounds[currentRound];
+  const winners = round.map(p => p.winner);
+  // Если финал
+  if (winners.length === 1) {
+    // Сохраняем результат
+    tournamentResults[selectedTournamentCategory] = winners[0].name;
+    renderSummary();
+    return;
+  }
+  // Новый раунд
+  tournamentRounds.push(createRound(winners));
+  currentRound++;
+  renderRound();
+};
+
+// === Рендер итогового саммари по категориям ===
+function renderSummary() {
+  const summaryContainer = document.getElementById('summary-container');
+  summaryContainer.innerHTML = '<h2>Итоги турниров</h2>';
+  const list = document.createElement('ul');
+  for (const [cat, winner] of Object.entries(tournamentResults)) {
+    const li = document.createElement('li');
+    li.textContent = `Категория "${cat}": победитель — ${winner}`;
+    list.appendChild(li);
+  }
+  summaryContainer.appendChild(list);
+}
 };
 
 document.getElementById('next-round-btn').onclick = () => {
