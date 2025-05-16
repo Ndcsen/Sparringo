@@ -1,2 +1,12 @@
 # Sparringo
-Sparringo is a cross-platform PWA application for organizing bouts at wrestling tournaments. It supports customization of weight and age categories, adding participants and generating pairs within categories. It is implemented in pure HTML/CSS/JS, published via GitHub Pages, available offline thanks to Service Worker.
+**Sparringo** — это веб-приложение для автоматического составления пар участников на турнирах по борьбе.
+
+## Возможности:
+- Добавление участников с указанием имени, возраста и веса
+- Формирование случайных пар для спаррингов
+- Простое использование прямо из браузера
+- Не требует установки — работает как PWA
+
+## Технологии:
+- HTML, CSS, JavaScript
+- GitHub Pages (для публикации)
