@@ -4,11 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sparringo</title>
+  <link rel="stylesheet" href="print.css" media="print" />
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
 </head>
 <body>
   <h1>Sparringo</h1>
+
+  <!-- Печать -->
+  <button id="print-btn" onclick="window.print()">🖨 Печать</button>
 
 <!-- === Раздел создания категорий === -->
   <section id="category-form">
@@ -52,5 +56,13 @@
   </section>
 
   <script src="app.js"></script>
+  <script>
+    // Регистрируем service worker для PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('Service Worker зарегистрирован'))
+        .catch(err => console.error('SW registration failed:', err));
+    }
+  </script>
 </body>
 </html>
