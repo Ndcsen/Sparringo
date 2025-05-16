@@ -15,14 +15,16 @@ function loadData() {
 const categories = [];
 const participants = [];
 
-// Турнирные данные
+// Турнирные данные для выбранной категории
 let tournamentRounds = [];
 let currentRound = 0;
+let selectedTournamentCategory = null;
 
 // Загрузка при старте
 loadData();
 renderCategories();
 renderParticipants();
+populateCategorySelect();
 
 // === Категории ===
 let editingCategoryIndex = null;
@@ -55,6 +57,7 @@ function addCategory() {
   clearCategoryForm();
   saveData();
   renderCategories();
+  populateCategorySelect();
 }
 
 function renderCategories() {
@@ -75,6 +78,7 @@ function renderCategories() {
       categories.splice(i, 1);
       saveData();
       renderCategories();
+      populateCategorySelect();
     };
     li.appendChild(delBtn);
 
@@ -98,6 +102,19 @@ function clearCategoryForm() {
     .forEach(id => document.getElementById(id).value = '');
 }
 
+// Заполняет селект выбора категории турнира
+function populateCategorySelect() {
+  const select = document.getElementById('tournament-category-select');
+  if (!select) return;
+  select.innerHTML = '<option value="">Выберите категорию</option>';
+  categories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.name;
+    opt.textContent = c.name;
+    select.appendChild(opt);
+  });
+}
+
 // === Участники ===
 let editingParticipantIndex = null;
 
@@ -111,12 +128,34 @@ function addParticipant() {
     return;
   }
 
-  const category = categories.find(c =>
+  // Ищем точную категорию
+  let category = categories.find(c =>
     age >= c.minAge && age <= c.maxAge &&
     weight >= c.minWeight && weight <= c.maxWeight
   );
+
+  // Если не нашли, ищем ближайшую по весу среди подходящих по возрасту
   if (!category) {
-    alert('Нет подходящей категории для этого участника.');
+    const ageFit = categories.filter(c => age >= c.minAge && age <= c.maxAge);
+    if (ageFit.length) {
+      let minDiff = Infinity;
+      ageFit.forEach(c => {
+        const diff = weight < c.minWeight
+          ? c.minWeight - weight
+          : weight > c.maxWeight
+            ? weight - c.maxWeight
+            : 0;
+        if (diff < minDiff) {
+          minDiff = diff;
+          category = c;
+        }
+      });
+      alert(`Участник автоматически отнесён к категории "${category.name}"`);
+    }
+  }
+
+  if (!category) {
+    alert('Нет подходящей категории по возрасту. Добавьте категорию или исправьте данные.');
     return;
   }
 
@@ -212,7 +251,7 @@ function generatePairs() {
   });
 }
 
-// === Турнир: создание и управление раундами ===
+// === Турнир: создание и управление раундами для выбранной категории ===
 function createRound(list) {
   const shuffled = [...list].sort(() => Math.random() - 0.5);
   const pairs = [];
@@ -227,7 +266,8 @@ function createRound(list) {
 
 function renderRound() {
   const container = document.getElementById('round-container');
-  container.innerHTML = `<h2>Этап ${currentRound + 1}</h2>`;
+  container.innerHTML = `<h2>Турнир: ${selectedTournamentCategory} (Этап ${currentRound + 1})</h2>`;
+  const list = participants.filter(p => p.category === selectedTournamentCategory);
   const round = tournamentRounds[currentRound];
   round.forEach((pair, i) => {
     const div = document.createElement('div');
@@ -259,13 +299,15 @@ function renderRound() {
   document.getElementById('next-round-btn').style.display = allChosen ? 'block' : 'none';
 }
 
-// Инициализация обработчиков турнира
+// Обработчики турнира
 document.getElementById('start-tournament-btn').onclick = () => {
-  if (participants.length < 2) {
-    alert('Нужно минимум 2 участника');
-    return;
-  }
-  tournamentRounds = [createRound(participants)];
+  const select = document.getElementById('tournament-category-select');
+  const cat = select.value;
+  if (!cat) { alert('Выберите категорию турнира'); return; }
+  selectedTournamentCategory = cat;
+  const list = participants.filter(p => p.category === cat);
+  if (list.length < 2) { alert('Недостаточно участников в этой категории'); return; }
+  tournamentRounds = [createRound(list)];
   currentRound = 0;
   renderRound();
 };
@@ -273,7 +315,7 @@ document.getElementById('start-tournament-btn').onclick = () => {
 document.getElementById('next-round-btn').onclick = () => {
   const winners = tournamentRounds[currentRound].map(p => p.winner);
   if (winners.length === 1) {
-    alert(`Победитель турнира — ${winners[0].name}!`);
+    alert(`Победитель турнира в категории ${selectedTournamentCategory} — ${winners[0].name}!`);
     return;
   }
   tournamentRounds.push(createRound(winners));
