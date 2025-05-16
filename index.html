@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sparringo</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+</head>
+<body>
+  <h1>Sparringo</h1>
+
+  <section id="form">
+    <input type="text" id="name" placeholder="Имя участника" />
+    <input type="number" id="age" placeholder="Возраст" />
+    <input type="number" id="weight" placeholder="Вес (кг)" />
+    <button onclick="addParticipant()">Добавить участника</button>
+  </section>
+
+  <section>
+    <h2>Участники</h2>
+    <ul id="participant-list"></ul>
+  </section>
+
+  <section>
+    <button onclick="generatePairs()">Сгенерировать пары</button>
+    <h2>Пары</h2>
+    <ul id="pairs-list"></ul>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
