@@ -15,6 +15,10 @@ function loadData() {
 const categories = [];
 const participants = [];
 
+// Турнирные данные
+let tournamentRounds = [];
+let currentRound = 0;
+
 // Загрузка при старте
 loadData();
 renderCategories();
@@ -30,7 +34,6 @@ function addCategory() {
   const minWeight = parseFloat(document.getElementById('cat-min-weight').value);
   const maxWeight = parseFloat(document.getElementById('cat-max-weight').value);
 
-  // Валидация...
   if (!name || isNaN(minAge) || isNaN(maxAge) || isNaN(minWeight) || isNaN(maxWeight)) {
     alert('Заполните все поля категории корректно.');
     return;
@@ -169,7 +172,7 @@ function clearParticipantForm() {
   ['name','age','weight'].forEach(id => document.getElementById(id).value = '');
 }
 
-// === Генерация пар ===
+// === Генерация пар по категориям ===
 function generatePairs() {
   const container = document.getElementById('pairs-container');
   container.innerHTML = '';
@@ -208,3 +211,72 @@ function generatePairs() {
     container.appendChild(ul);
   });
 }
+
+// === Турнир: создание и управление раундами ===
+function createRound(list) {
+  const shuffled = [...list].sort(() => Math.random() - 0.5);
+  const pairs = [];
+  for (let i = 0; i < shuffled.length - 1; i += 2) {
+    pairs.push({ a: shuffled[i], b: shuffled[i+1], winner: null });
+  }
+  if (shuffled.length % 2 === 1) {
+    pairs.push({ a: shuffled[shuffled.length-1], b: null, winner: shuffled[shuffled.length-1] });
+  }
+  return pairs;
+}
+
+function renderRound() {
+  const container = document.getElementById('round-container');
+  container.innerHTML = `<h2>Этап ${currentRound + 1}</h2>`;
+  const round = tournamentRounds[currentRound];
+  round.forEach((pair, i) => {
+    const div = document.createElement('div');
+    div.className = 'tournament-pair';
+    if (pair.b) {
+      div.innerHTML = `
+        <span>${pair.a.name}</span>
+        <button data-index="${i}" data-choice="a">✔</button>
+        <button data-index="${i}" data-choice="b">✔</button>
+        <span>${pair.b.name}</span>
+      `;
+    } else {
+      div.innerHTML = `<span>${pair.a.name} (бай) — проходит автоматически</span>`;
+      pair.winner = pair.a;
+    }
+    container.appendChild(div);
+  });
+
+  container.querySelectorAll('button').forEach(btn => {
+    btn.onclick = e => {
+      const idx = +e.target.dataset.index;
+      const choice = e.target.dataset.choice;
+      tournamentRounds[currentRound][idx].winner = choice === 'a' ? tournamentRounds[currentRound][idx].a : tournamentRounds[currentRound][idx].b;
+      renderRound();
+    };
+  });
+
+  const allChosen = tournamentRounds[currentRound].every(p => p.winner);
+  document.getElementById('next-round-btn').style.display = allChosen ? 'block' : 'none';
+}
+
+// Инициализация обработчиков турнира
+document.getElementById('start-tournament-btn').onclick = () => {
+  if (participants.length < 2) {
+    alert('Нужно минимум 2 участника');
+    return;
+  }
+  tournamentRounds = [createRound(participants)];
+  currentRound = 0;
+  renderRound();
+};
+
+document.getElementById('next-round-btn').onclick = () => {
+  const winners = tournamentRounds[currentRound].map(p => p.winner);
+  if (winners.length === 1) {
+    alert(`Победитель турнира — ${winners[0].name}!`);
+    return;
+  }
+  tournamentRounds.push(createRound(winners));
+  currentRound++;
+  renderRound();
+};
